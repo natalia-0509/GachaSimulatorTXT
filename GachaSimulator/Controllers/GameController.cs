@@ -1,5 +1,7 @@
-﻿using GachaSimulator.Models;
+﻿using GachaSimulator.Data;
+using GachaSimulator.Models;
 using GachaSimulator.Views;
+using Spectre.Console;
 
 namespace GachaSimulator.Controllers;
 
@@ -9,14 +11,21 @@ public class GameController
     private List<Blindbox> _boxes;
     private MainMenuView _view;
     private InventoryView _inventoryview;
+    private AnimationView _animationView;
     private int _selectedIndex = 0;
+    private DatabaseService _db;
 
     public GameController()
     {
         _player = new Player("student");
-        _boxes = GenerateSampleBoxes();
         _view = new MainMenuView();
         _inventoryview = new InventoryView();
+        _animationView = new AnimationView();
+        _db = new DatabaseService();
+        _db.InitializeDatabase();
+        _player = _db.LoadPlayer();
+        _boxes = _db.LoadBlindBoxes();
+
     }
 
     public void Start()
@@ -59,48 +68,24 @@ public class GameController
         if (_player.CanAfford(box.Cost))
         {
             _player.DeductCoins(box.Cost);
+            _db.UpdatePlayerCoins(_player.Coins);
+            
             Item droppedItem = box.Open();
             _player.AddItemToInventory(droppedItem);
+            _db.AddItemToInventory(droppedItem);
             
-            // TODO: Tutaj wstawimy w przyszłości animację otwierania z nowego widoku (AnimationView)
-            Console.Clear();
-            Console.WriteLine($"\n[SYMULACJA ANIMACJI] Wylosowano: {droppedItem.Name} ({droppedItem.ItemRarity})!");
-            Console.WriteLine("Wciśnij dowolny klawisz, aby wrócić do menu...");
-            Console.ReadKey(true);
+            _animationView.PlayOpenAnimation(box.CategoryName, droppedItem);
         }
         else
         {
             Console.Clear();
-            Console.WriteLine("\nNie masz wystarczająco dużo monet na tę skrzynkę!");
-            Console.WriteLine("Wciśnij dowolny klawisz, aby wrócić do menu...");
+            var errorPanel = new Panel(new Markup("[bold red]Nie masz wystarczająco dużo monet, aby otworzyć tą skrzynkę![/]\n [grey]Sprzedaj postacie z ekwipunku (klawisz I), aby zdobyć złoto.[/]"))
+                .Header("[bold red] Brak środków[/]")
+                .BorderColor(Color.Red);
+            AnsiConsole.Write(errorPanel);
             Console.ReadKey(true);
         }
     }
-
-    private List<Blindbox> GenerateSampleBoxes()
-    {
-        var fantasyItems = new List<Item>
-        {
-            new Item("Zardzewiały Miecz", Rarity.Common, "Tępy, ale działa.", 10, 5, 2, 5),
-            new Item("Stalowy Sztylet", Rarity.Rare, "Ostra broń dla zwinnych.", 30, 15, 20, 50),
-            new Item("Magiczny Pierścień", Rarity.Epic, "Lekko świeci w ciemności.", 55, 20, 25, 200),
-            new Item("Miecz Tysiąca Prawd", Rarity.Legendary, "Broń ostateczna.", 100, 75, 50, 1000)
-        };
-        var scifiItems = new List<Item>
-        {
-            new Item("Stary Blaster", Rarity.Common, "Z zaciętym spustem.", 15, 10, 5, 20),
-            new Item("Kombinezon Ochronny", Rarity.Rare, "Chroni przed radiacją.", 50, 30, 30, 80),
-            new Item("Miecz Świetlny", Rarity.Epic, "Elegancka broń na bardziej cywilizowane czasy.", 100, 50, 25, 200),
-            new Item("Dezintegrator", Rarity.Legendary, "Pozbądź się wszystkiego, wszędzie.", 150, 100, 75, 1500)
-        };
-        return new List<Blindbox>
-        {
-            new Blindbox("Skrzynka Fantasy", 150, fantasyItems),
-            new Blindbox("Skrzynka Sci-Fi", 300, scifiItems),
-            new Blindbox("Demo", 1000, new List<Item>())
-        };
-    }
-
     private void OpenInventory()
     {
         Console.Clear();
@@ -134,15 +119,47 @@ public class GameController
                 case ConsoleKey.S:
                     if (_player.Inventory.Count > 0)
                     {
-                        _player.SellItems(_player.Inventory[invIndex]);
-                            Console.Clear();
+                        var itemsToSell = _player.Inventory[invIndex];
+                        _player.SellItems(itemsToSell);
+                        _db.RemoveItemFromInventory(itemsToSell.Id);
+                        _db.UpdatePlayerCoins(_player.Coins);
+                        Console.Clear();
                     }
+                    break;
+                case ConsoleKey.R:
+                    if (ConfirmReset())
+                    {
+                        _player.Reset();
+                        _db.ResetPlayer();
+                        invIndex = 0;
+                    }
+                    Console.Clear();
                     break;
                 case ConsoleKey.I: 
                     case ConsoleKey.Escape:
                     inInventory = false;
                     break;
             }
+        }
+    }
+
+    private bool ConfirmReset()
+    {
+        Console.Clear();
+        var confirmPanel = new Panel(new Markup("[bold yellow]Czy na pewno chcesz zresetować swój profil?[/]\n" +
+                                                "[grey]Wszystkie zebrane postacie zostaną usunięte, a stan konta wróci do 1000 monet.[/]\n\n" +
+                                                "[bold green][[ENTER / T]][/] - Tak, resetuj    |    [bold red][[ESC / N]][/] - Anuluj"))
+            .Header("[bold red]Potwierdzenie resetu[/]")
+            .BorderColor(Color.Yellow);
+        AnsiConsole.Write(confirmPanel);
+
+        while (true)
+        {
+            var key = Console.ReadKey(true).Key;
+            if(key == ConsoleKey.Enter || key == ConsoleKey.T)
+                return  true;
+            if (key == ConsoleKey.Escape || key ==ConsoleKey.N)
+                return false;
         }
     }
 }

@@ -35,5 +35,11 @@ public class Player
    Coins += item.MarketValue;
   }
  }
+
+ public void Reset()
+ {
+  Coins = 1000;
+  Inventory.Clear();
+ } 
  
 }

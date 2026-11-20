@@ -5,6 +5,7 @@ namespace GachaSimulator.Models;
 
 public class Blindbox
 {
+    public int Id {get;  set;}
     public string CategoryName { get; set; }
     public int Cost { get; set; }
     public List<Item> PossibleItems { get; set; }

@@ -10,6 +10,7 @@ public enum Rarity
 
 public class Item
 {
+	public int Id {get;  set;}
 	public string Name { get; set; }
 	public Rarity ItemRarity { get; set; }
 	public string Description { get; set; }

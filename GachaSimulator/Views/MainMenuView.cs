@@ -15,8 +15,8 @@ public class MainMenuView
 
         var rightGrid = new Grid();
         rightGrid.AddColumn();
-        rightGrid.AddRow(new Markup($"[bold yellow]Cena otwarcia:[/] {selectedBox.Cost} monet\n"));
-        rightGrid.AddRow(new Markup("[bold]Możliwe przedmioty do zdobycia:[/]\n"));
+        rightGrid.AddRow(new Markup($"[bold yellow]Cena życzenia:[/] {selectedBox.Cost} monet\n"));
+        rightGrid.AddRow(new Markup("[bold]Możliwe postacie do zdobycia:[/]\n"));
         
 
         foreach (var item in selectedBox.PossibleItems)
@@ -36,6 +36,7 @@ public class MainMenuView
             .Header($"[bold green]Statystyki: {selectedBox.CategoryName}[/]")
             .Expand()
             .BorderColor(Color.Green);
+        rightPanel.Width = 40;
         
         var leftGrid = new Grid();
         leftGrid.AddColumn();
@@ -58,9 +59,10 @@ public class MainMenuView
             }
         }
         var leftPanel = new Panel(leftGrid)
-            .Header("[bold blue]Wybierz skrzynkę[/]")
+            .Header("[bold blue]Wybierz pakiet[/]")
             .Expand()
             .BorderColor(Color.Blue);
+        leftPanel.Width = 60;
         var columns = new Columns(leftPanel, rightPanel);
         AnsiConsole.Write(columns);
     }

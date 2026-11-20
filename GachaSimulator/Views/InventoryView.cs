@@ -15,7 +15,7 @@ public class InventoryView
         if (player.Inventory.Count == 0)
         {
             rightGrid.AddRow(new Markup("[grey]Brak wybranego przedmiotu.[/]"));
-            rightGrid.AddRow(new Markup("\n[grey]Otwórz kilka skrzynek, aby zapełnić swoją kolekcję![/]"));
+            rightGrid.AddRow(new Markup("\n[grey]Otwórz kilka pakietów, aby zapełnić swoją kolekcję![/]"));
         }
         else
         {
@@ -32,17 +32,19 @@ public class InventoryView
         }
 
         var rightPanel = new Panel(rightGrid)
-            .Header("[bold green]Statystyki przedmiotu[/]")
+            .Header("[bold green]Statystyki postaci[/]")
             .Expand()
             .BorderColor(Color.Green);
+        rightPanel.Height = 17;
         
         
         
         var leftGrid = new Grid();
         leftGrid.AddColumn();
         leftGrid.AddRow(new Markup(
-            $"Portfel: [bold yellow] {player.Coins} monet[/] | Przedmioty: [bold]{player.Inventory.Count}[/]\n"));
-        leftGrid.AddRow(new Markup("[grey] GÓRA/DÓŁ - wybór | S - sprzedaj | /ESC - powrót[/]\n"));
+            $"Portfel: [bold yellow] {player.Coins} monet[/] | Ilość Postaci: [bold]{player.Inventory.Count}[/]\n"));
+        leftGrid.AddRow(new Markup("[grey] GÓRA/DÓŁ - wybór | S - sprzedaj[/]"));
+        leftGrid.AddRow(new Markup("[grey] R - reset | /ESC - powrót[/]\n"));
         
         if (player.Inventory.Count == 0)
         {
@@ -74,9 +76,18 @@ public class InventoryView
             .Header("[bold yellow]Twoja Kolekcja (Ekwipunek)[/]")
             .Expand()
             .BorderColor(Color.Yellow);
+        leftPanel.Height = 17;
 
-        var columns = new Columns(leftPanel, rightPanel); 
-        AnsiConsole.Write(columns);
+        var layout = new Table()
+            .Border(TableBorder.None)
+            .HideHeaders()
+            .Expand();
+
+        layout.AddColumn(new TableColumn("").Width(46));
+        layout.AddColumn(new TableColumn(""));
+        layout.AddRow(leftPanel, rightPanel);
+
+        AnsiConsole.Write(layout);
     }
 
     private string GetRarityColor(Rarity rarity)
